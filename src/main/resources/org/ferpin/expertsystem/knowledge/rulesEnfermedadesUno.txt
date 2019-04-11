@@ -8,7 +8,14 @@ premise(1, 5,  [mareos]).
 premise(1, 6,  [retencion_agua]).
 premise(1, 7,  [aumento_peso]).
 premise(1, 8,  [piernas_inflamadas]).
+% premise(1, 9,  [nerviosismo]).
 conclusion(1, 'El paciente tiene INSUFICIENCIA CARDIACA').
+
+% rule(9).
+% premise(9, 1,  [inquieto]).
+% premise(9, 2,  [ansiedad]).
+% premise(9, 3,  [sudoracion]).
+% conclusion(9, [nerviosismo]).
 
 % arritmia 
 rule(2).
