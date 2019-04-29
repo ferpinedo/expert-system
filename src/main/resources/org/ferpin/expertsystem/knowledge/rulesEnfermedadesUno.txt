@@ -1,5 +1,6 @@
 % insuficienciaCardiaca
 rule(1).
+finalConclusion(1).
 premise(1, 1,  [tos_flema]).
 premise(1, 2,  [dolor_pecho]).
 premise(1, 3,  [tos_seca]).
@@ -26,6 +27,7 @@ conclusion(10,  [ansiedad]).
 
 % arritmia 
 rule(2).
+finalConclusion(2).
 premise(2, 1,  [dolor_pecho]).
 premise(2, 2,  [desmayo]).
 premise(2, 3,  [palpitaciones]).
@@ -35,6 +37,7 @@ conclusion(2,  [arritmia]).
 
 % arterialPeriferica 
 rule(3).
+finalConclusion(3).
 premise(3, 1,  [dolor_nalgas]).
 premise(3, 2,  [dolor_piernas_realizar_ejercicio]).
 premise(3, 3,  [piel_fria]).
@@ -43,6 +46,7 @@ conclusion(3,  [enfermedad_arterial_periferica]).
 
 % derrameCerebral
 rule(4).
+
 premise(4, 1,  [dificultad_caminar]).
 premise(4, 2,  [inestabilidad]).
 premise(4, 3,  [aturdimiento_ligero]).
@@ -52,6 +56,7 @@ conclusion(4,  [derrame_cerebral]).
 
 % cardiopatiaCongenita
 rule(5).
+
 premise(5, 1,  [ritmo_caridaco_anormal]).
 premise(5, 2,  [soplo_corazon]).
 premise(5, 3,  [hinchazon]).
@@ -60,6 +65,7 @@ conclusion(5,  [enfermedad_cardiopatia_congenita]).
 
 % coronaria
 rule(6).
+
 premise(6, 1,  [dolor_pecho]).
 premise(6, 2,  [nausea]).
 premise(6, 3,  [indigestion]).
@@ -69,11 +75,13 @@ conclusion(6,  [coronaria]).
 
 %hipertensionArterial
 rule(7).
+
 premise(7, 1,  [ningun_sintoma]).
 conclusion(7,  [hipertension_arterial]).   
 
 %cardiorrespiratorio
 rule(8).
+
 premise(8, 1,  [dolor_pecho]).
 premise(8, 2,  [aturdimiento_ligero]).
 premise(8, 3,  [desmayo]).

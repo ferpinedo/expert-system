@@ -1,10 +1,11 @@
+% Autor: Fernando Josué Pinedo Orta
+
 
 % :- dynamic rule/3. % las condiciones y las conclusiones de la rule
 :- dynamic rule/1.
 :- dynamic premise/3.
 :- dynamic conclusion/2.
 :- dynamic status/3. % premises  
-
 
 %%% Read rules
 
@@ -43,7 +44,7 @@ readLines(Stream, [Line|L]):-
 
 demo:-
     restart,
-    loadRules,
+    loadRules;
     initialize.
 
 %%% Utils
@@ -65,7 +66,26 @@ isNotEqual(A,B):- A\=B.
 % )
 
 
+% Rules as premises of others rules
+% 1. What if an evidence is a Rule?
+%    The rule premises should be set to true (and all of the other premises of the other rules).
+% 2. The next question to ask should be ...
+% 
+% Rule status can be obtained by its probability percentage
+
+% TODO: dudas a resolver: solo si termina en false se reinicia la clausula?,
+%       si uno de los predicados de una clausula esta en false se interrumpe el proceso de la clausula? 
+
 %%%% Algorithm
+
+processEvidence(Evidence):-
+    (conclusion(Rule, Evidence) -> % TODO: is there any other way to do this??
+        writeln('It is a conclusion also'),
+        setRulePremisesToTrue(Rule)
+    ),
+    findTruePremises(Evidence).
+    
+    
 
 findTruePremises(Evidence):-
     premise(Rule, Premise, Evidence),
@@ -73,7 +93,17 @@ findTruePremises(Evidence):-
     assert(status(Rule, Premise, true)),
     false.
 
-findAndDeleteFalseRules(Evidence):- % que tan bueno es borrar las reglas falsas
+% conclusion(Rule, Evidence),
+% setRulePremisesToTrue(Rule)
+setRulePremisesToTrue(Rule):-
+    retract(status(Rule, _, _)),
+    premise(Rule, Premise, _),
+    assert(status(Rule, Premise, true)),
+    false.
+
+
+
+findAndDeleteFalseRules(Evidence):- % TODO: que tan bueno es borrar las reglas falsas
     premise(Rule, Premise, Evidence),
     retract(premise(Rule, _, _)),
     retract(rule(Rule)),
@@ -106,27 +136,14 @@ getUnconfirmedPremise(Rule, PremiseNumber):-
     findall([Number], status(Rule, Number, empty), [[PremiseNumber]|_]).
 
 
-
 start:-
     write('>'),
     readln(Line),
     writeln(Line),
-    findTruePremises(Line),
+    processEvidence(Line),
    
-    getProbabilities(List),
-    getMostProbableRule(List, MostProbableRule),
-
-    conclusion(MostProbableRule, Conclusion),
-    write('The most probable is '),
-    writeln(Conclusion),
-
-
-    getUnconfirmedPremise(MostProbableRule, PremiseNumber),
-    premise(MostProbableRule, PremiseNumber, PremiseContent),
-    write(PremiseContent),
-    writeln('?').
-    
-
+    showMostProbableRule,
+    ask.
 
 
 ask:-
@@ -134,6 +151,17 @@ ask:-
     getMostProbableRule(List, MostProbableRule),
     getUnconfirmedPremise(MostProbableRule, PremiseNumber),
     premise(MostProbableRule, PremiseNumber, [PremiseContent]),
+    
+    % isThisPremiseAConclusion(PremiseContent)
+    (conclusion(Rule, [PremiseContent]) -> % TODO: is there any other way to do this??
+        getUnconfirmedPremise(Rule, PremiseNumber),
+        premise(Rule, PremiseNumber, [PremiseContent])
+    ),
+
+    % conclusion(Rule, [PremiseContent]),
+    % getUnconfirmedPremise(Rule, PremiseNumber),
+    % premise(Rule, PremiseNumber, [PremiseContent]),
+
     write('El paciente tiene '),
     write(PremiseContent),
     writeln('?').
@@ -146,7 +174,7 @@ ask:-
 %     premise(MostProbableRule, PremiseNumber, PremiseContent),
 %     (   Answer = yes ->
 %         writeln('Finding true premises'),
-%         findTruePremises(PremiseContent)
+%         processEvidence(PremiseContent)
 
 %     ;   Answer = no -> 
 %         writeln('Retracting false rules'),
@@ -162,7 +190,7 @@ answer(yes):-
     premise(MostProbableRule, PremiseNumber, PremiseContent),
     
     writeln('Finding true premises'),
-    findTruePremises(PremiseContent).
+    processEvidence(PremiseContent).
 
 answer(no):-
     getProbabilities(List),
@@ -177,3 +205,10 @@ answer(no):-
 showProbabilities:-
     getProbabilities(List),
     writeln(List).
+
+showMostProbableRule:-
+    getProbabilities(List),
+    getMostProbableRule(List, MostProbableRule),
+    conclusion(MostProbableRule, Conclusion),
+    write('The most probable rule is '),
+    writeln(Conclusion).
