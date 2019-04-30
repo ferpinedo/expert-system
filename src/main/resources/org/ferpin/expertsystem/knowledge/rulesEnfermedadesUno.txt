@@ -33,6 +33,7 @@ premise(2, 2,  [desmayo]).
 premise(2, 3,  [palpitaciones]).
 premise(2, 4,  [dificultades_respiratorias]).
 premise(2, 5,  [mareos]).
+premise(2, 6,  [agitacion]).
 conclusion(2,  [arritmia]).
 
 % arterialPeriferica 

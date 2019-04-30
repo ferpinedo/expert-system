@@ -21,12 +21,26 @@ loadRules:-
     readLines(Stream, _),
     close(Stream).
 
-initialize:-
-    premise(Rule, PremiseNumber, _),
-    assert(status(Rule, PremiseNumber, empty)),
-    false.
+% initializeStatus:-
+%     writeln('Starting initialization process'),
+%     premise(Rule, PremiseNumber, _),
+%     assert(status(Rule, PremiseNumber, empty)),
+%     false.
 
-restart:-
+initializeRuleStatus([]).
+
+initializeRuleStatus([FirstRule|Left]):-
+    findall(Premise, premise(FirstRule, Premise, _), Premises),
+    initializePremiseStatus(FirstRule, Premises),
+    initializeRuleStatus(Left).
+
+initializePremiseStatus(_, []).
+
+initializePremiseStatus(Rule, [FirstPremise|Left]):-
+    assert(status(Rule, FirstPremise, empty)),
+    initializePremiseStatus(Rule, Left).
+
+clean:-
     retractall(premise(_, _, _)),
     retractall(rule(_)),
     retractall(conclusion(_, _)),
@@ -42,10 +56,11 @@ readLines(Stream, [Line|L]):-
     assert(Line),
     readLines(Stream, L).
 
-demo:-
-    restart,
-    loadRules;
-    initialize.
+initialize:-
+    clean,
+    loadRules,
+    getAllRules(Rules),
+    initializeRuleStatus(Rules).
 
 %%% Utils
 isEqual(A,A). 
@@ -73,33 +88,54 @@ isNotEqual(A,B):- A\=B.
 % 
 % Rule status can be obtained by its probability percentage
 
-% TODO: dudas a resolver: solo si termina en false se reinicia la clausula?,
-%       si uno de los predicados de una clausula esta en false se interrumpe el proceso de la clausula? 
+% TODO: dudas a resolver: hay alguna otra forma de recorrer nodos ademas de false y findall?
+%       como funciona el truco de poner false?
 
 %%%% Algorithm
 
 processEvidence(Evidence):-
     (conclusion(Rule, Evidence) -> % TODO: is there any other way to do this??
         writeln('It is a conclusion also'),
-        setRulePremisesToTrue(Rule)
-    ),
-    findTruePremises(Evidence).
-    
+        setAllRulePremisesToTrue(Rule),
+        findTruePremises(Evidence),
+
+        writeln('Deleting sub-rule...'),
+        retractall(premise(Rule, _, _)),
+        retractall(rule(Rule)),
+        retractall(conclusion(Rule, _)),
+        retractall(status(Rule, _, _)),
+
+        searchForTrueRules % Too expensive
+    ;
+        writeln('Finding premises'),
+        findTruePremises(Evidence),
+
+        searchForTrueRules % Too expensive
+    ).
+
+ searchForTrueRules:- % TODO TODO TODO
+    .   
     
 
 findTruePremises(Evidence):-
-    premise(Rule, Premise, Evidence),
-    retract(status(Rule, Premise, _)),
-    assert(status(Rule, Premise, true)),
-    false.
+    forall(premise(Rule, Premise, Evidence), setPremiseTrue(Rule, Premise)).
+    % Before (false trick)
+    % premise(Rule, Premise, Evidence),
+    % retractall(status(Rule, Premise, _)),
+    % assert(status(Rule, Premise, true)),
+    % false.
 
-% conclusion(Rule, Evidence),
-% setRulePremisesToTrue(Rule)
-setRulePremisesToTrue(Rule):-
-    retract(status(Rule, _, _)),
-    premise(Rule, Premise, _),
-    assert(status(Rule, Premise, true)),
-    false.
+setPremiseTrue(Rule, Premise):-
+    retract(status(Rule, Premise, _)),
+    assert(status(Rule, Premise, true)).
+
+setAllRulePremisesToTrue(Rule):- % Sets to true all premises
+    forall(premise(Rule, _, PremiseContent), findTruePremises(PremiseContent)).
+    % Before (false trick)
+    % premise(Rule, Premise, _),
+    % retractall(status(Rule, Premise, _)),
+    % assert(status(Rule, Premise, true)),
+    % false.
 
 
 
@@ -110,6 +146,13 @@ findAndDeleteFalseRules(Evidence):- % TODO: que tan bueno es borrar las reglas f
     retract(conclusion(Rule, _)),
     retract(status(Rule, Premise, _)),
     false.
+
+
+getAllRules(Rules):-
+    findall(Rule, rule(Rule), Rules).
+
+getPremises(Rule, Premises):-
+    findall(Premise, premise(Rule, Premise, _), Premises).
 
 getPremisesLength(Rule, Size):-
     findall(Rule, premise(Rule, _, _), List),
@@ -155,16 +198,19 @@ ask:-
     % isThisPremiseAConclusion(PremiseContent)
     (conclusion(Rule, [PremiseContent]) -> % TODO: is there any other way to do this??
         getUnconfirmedPremise(Rule, PremiseNumber),
-        premise(Rule, PremiseNumber, [PremiseContent])
-    ),
+        premise(Rule, PremiseNumber, [PremiseContent]),
 
-    % conclusion(Rule, [PremiseContent]),
-    % getUnconfirmedPremise(Rule, PremiseNumber),
-    % premise(Rule, PremiseNumber, [PremiseContent]),
+        write('El paciente tiene '),
+        write(PremiseContent),
+        writeln('?')
+    ;
 
-    write('El paciente tiene '),
-    write(PremiseContent),
-    writeln('?').
+        write('El paciente tiene '),
+        write(PremiseContent),
+        writeln('?')
+    ).
+
+    
 
 
 % answer(Answer):-
