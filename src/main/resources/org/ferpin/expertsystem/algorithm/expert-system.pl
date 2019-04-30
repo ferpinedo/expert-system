@@ -115,6 +115,9 @@ processEvidence(Evidence):-
 
  searchForTrueRules:- % TODO TODO TODO
     .   
+
+    %TODO: Al contestar no, además de eliminar las reglas que la tengan como premisa, checar si corresponde a una sub-regla, si es así entonces también eliminar las reglas que la incluyan como parte de sus premisas
+
     
 
 findTruePremises(Evidence):-
