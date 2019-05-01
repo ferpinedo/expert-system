@@ -12,6 +12,7 @@ premise(1, 8,  [nerviosismo]).
 premise(1, 9,  [piernas_inflamadas]).
 conclusion(1,  [insuficiencia_cardiaca]).
 
+
 % nerviosismo
 rule(9).
 premise(9, 1,  [inquietud]).
@@ -19,11 +20,13 @@ premise(9, 2,  [ansiedad]).
 premise(9, 3,  [sudoracion]).
 conclusion(9,  [nerviosismo]).
 
+
 % ansiedad
 rule(10).
 premise(10, 1,  [agitacion]).
 premise(10, 2,  [preocupacion]).
 conclusion(10,  [ansiedad]).
+
 
 % arritmia 
 rule(2).
@@ -36,18 +39,21 @@ premise(2, 5,  [mareos]).
 premise(2, 6,  [agitacion]).
 conclusion(2,  [arritmia]).
 
+
 % arterialPeriferica 
 rule(3).
 finalConclusion(3).
 premise(3, 1,  [dolor_nalgas]).
 premise(3, 2,  [dolor_piernas_realizar_ejercicio]).
-premise(3, 3,  [piel_fria]).
-premise(3, 4,  [ulceras]).
+premise(3, 3,  [nerviosismo]).
+premise(3, 4,  [piel_fria]).
+premise(3, 5,  [ulceras]).
 conclusion(3,  [enfermedad_arterial_periferica]).
+
 
 % derrameCerebral
 rule(4).
-
+finalConclusion(4).
 premise(4, 1,  [dificultad_caminar]).
 premise(4, 2,  [inestabilidad]).
 premise(4, 3,  [aturdimiento_ligero]).
@@ -55,18 +61,20 @@ premise(4, 4,  [fatiga]).
 premise(4, 5,  [vertigo]).
 conclusion(4,  [derrame_cerebral]).
 
+
 % cardiopatiaCongenita
 rule(5).
-
+finalConclusion(5).
 premise(5, 1,  [ritmo_caridaco_anormal]).
 premise(5, 2,  [soplo_corazon]).
 premise(5, 3,  [hinchazon]).
 premise(5, 4,  [dificultad_respirar]).
 conclusion(5,  [enfermedad_cardiopatia_congenita]).   
 
+
 % coronaria
 rule(6).
-
+finalConclusion(6).
 premise(6, 1,  [dolor_pecho]).
 premise(6, 2,  [nausea]).
 premise(6, 3,  [indigestion]).
@@ -74,15 +82,17 @@ premise(6, 4,  [sudoracion]).
 premise(6, 5,  [dificultad_respirar]).
 conclusion(6,  [coronaria]).   
 
+
 %hipertensionArterial
 rule(7).
-
+finalConclusion(7).
 premise(7, 1,  [ningun_sintoma]).
 conclusion(7,  [hipertension_arterial]).   
 
+
 %cardiorrespiratorio
 rule(8).
-
+finalConclusion(8).
 premise(8, 1,  [dolor_pecho]).
 premise(8, 2,  [aturdimiento_ligero]).
 premise(8, 3,  [desmayo]).

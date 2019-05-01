@@ -1,14 +1,12 @@
 % Autor: Fernando Josué Pinedo Orta
 
-
-% :- dynamic rule/3. % las condiciones y las conclusiones de la rule
 :- dynamic rule/1.
 :- dynamic premise/3.
 :- dynamic conclusion/2.
-:- dynamic status/3. % premises  
+:- dynamic status/3. % premises 
+:- dynamic finalConclusion/1. 
 
-%%% Read rules
-
+%%%%    Read utilities  %%%%
 loadRules(FilePath):-
     open(FilePath , read, Stream),
     % "F:\\Repos\\expert-system\\src\\main\\resources\\org\\ferpin\\expertsystem\\algorithm\\expert-system.pl"
@@ -44,7 +42,8 @@ clean:-
     retractall(premise(_, _, _)),
     retractall(rule(_)),
     retractall(conclusion(_, _)),
-    retractall(status(_, _, _)).
+    retractall(status(_, _, _)),
+    retractall(finalConclusion(_)).
     
     
 readLines(Stream, []):-
@@ -56,13 +55,14 @@ readLines(Stream, [Line|L]):-
     assert(Line),
     readLines(Stream, L).
 
-initialize:-
+init:-
     clean,
     loadRules,
     getAllRules(Rules),
     initializeRuleStatus(Rules).
 
-%%% Utils
+
+%%%%   General Utils   %%%%
 isEqual(A,A). 
 
 isNotEqual(A,B):- A\=B.
@@ -83,42 +83,67 @@ isNotEqual(A,B):- A\=B.
 
 % Rules as premises of others rules
 % 1. What if an evidence is a Rule?
-%    The rule premises should be set to true (and all of the other premises of the other rules).
+%    The rule premises should be set to true (and all of the other premises of the other rules). DONE
 % 2. The next question to ask should be ...
 % 
 % Rule status can be obtained by its probability percentage
 
-% TODO: dudas a resolver: hay alguna otra forma de recorrer nodos ademas de false y findall?
+% DOUBTS: hay alguna otra forma de recorrer nodos ademas de false y findall?
 %       como funciona el truco de poner false?
 
-%%%% Algorithm
+%%%%    Algorithm   %%%%
 
 processEvidence(Evidence):-
-    (conclusion(Rule, Evidence) -> % TODO: is there any other way to do this??
-        writeln('It is a conclusion also'),
+    (conclusion(Rule, Evidence) -> % DOUBT: is there any other way to do this??
+        % writeln('It is a conclusion also'),
         setAllRulePremisesToTrue(Rule),
         findTruePremises(Evidence),
 
-        writeln('Deleting sub-rule...'),
-        retractall(premise(Rule, _, _)),
-        retractall(rule(Rule)),
-        retractall(conclusion(Rule, _)),
-        retractall(status(Rule, _, _)),
-
         searchForTrueRules % Too expensive
     ;
-        writeln('Finding premises'),
+        % writeln('Finding premises'),
         findTruePremises(Evidence),
 
         searchForTrueRules % Too expensive
     ).
 
- searchForTrueRules:- % TODO TODO TODO
-    .   
+ searchForTrueRules:-
+    % writeln("Starting search"),
+    foreach(rule(Rule), evaluateRule(Rule)).
 
-    %TODO: Al contestar no, además de eliminar las reglas que la tengan como premisa, checar si corresponde a una sub-regla, si es así entonces también eliminar las reglas que la incluyan como parte de sus premisas
+evaluateRule(Rule):-
+    % write("Evaluating rule "), writeln(Rule),
+    getProbability(Rule, Percentage),
+
+    (Percentage =:= 1 -> 
+        (finalConclusion(Rule) ->
+            write('Concluido, el paciente tiene: '),
+            conclusion(Rule, Conclusion),
+            writeln(Conclusion)
+        ;  
+            writeln('Sub-rule concluded, setting premises to true'),
+            conclusion(Rule, Evidence),
+            findTruePremises(Evidence),
+            writeln('Deleting sub-rule...'),
+            retractall(premise(Rule, _, _)),
+            retractall(rule(Rule)),
+            retractall(conclusion(Rule, _)),
+            retractall(status(Rule, _, _))
+        )
+    ; 
+        % writeln('Is not 100%'),
+        true
+    ).  
 
     
+setPremiseTrue(Rule, Premise):-
+    retract(status(Rule, Premise, _)),
+    assert(status(Rule, Premise, true)).
+    % Instead of evaluate Rule...
+    % getProbability(Rule, Percentage),
+    % (Percentage =:= 1 -> 
+    %     finalConclusion(Rule)).
+
 
 findTruePremises(Evidence):-
     forall(premise(Rule, Premise, Evidence), setPremiseTrue(Rule, Premise)).
@@ -127,10 +152,6 @@ findTruePremises(Evidence):-
     % retractall(status(Rule, Premise, _)),
     % assert(status(Rule, Premise, true)),
     % false.
-
-setPremiseTrue(Rule, Premise):-
-    retract(status(Rule, Premise, _)),
-    assert(status(Rule, Premise, true)).
 
 setAllRulePremisesToTrue(Rule):- % Sets to true all premises
     forall(premise(Rule, _, PremiseContent), findTruePremises(PremiseContent)).
@@ -141,8 +162,7 @@ setAllRulePremisesToTrue(Rule):- % Sets to true all premises
     % false.
 
 
-
-findAndDeleteFalseRules(Evidence):- % TODO: que tan bueno es borrar las reglas falsas
+findAndDeleteFalseRules(Evidence):- % DOUBT: que tan bueno es borrar las reglas falsas
     premise(Rule, Premise, Evidence),
     retract(premise(Rule, _, _)),
     retract(rule(Rule)),
@@ -199,12 +219,14 @@ ask:-
     premise(MostProbableRule, PremiseNumber, [PremiseContent]),
     
     % isThisPremiseAConclusion(PremiseContent)
-    (conclusion(Rule, [PremiseContent]) -> % TODO: is there any other way to do this??
-        getUnconfirmedPremise(Rule, PremiseNumber),
-        premise(Rule, PremiseNumber, [PremiseContent]),
+    (conclusion(Rule, [PremiseContent]) -> % DOUBT: is there any other way to do this??
+        getUnconfirmedPremise(Rule, Number),
+        premise(Rule, Number, [Content]),
+
+        %%% TODO TODO TODO Agregar recursividad para revisar si esta premisa no es a su vez otra sub-regla
 
         write('El paciente tiene '),
-        write(PremiseContent),
+        write(Content),
         writeln('?')
     ;
 
@@ -213,39 +235,41 @@ ask:-
         writeln('?')
     ).
 
-    
-
-
-% answer(Answer):-
-%     getProbabilities(List),
-%     getMostProbableRule(List, MostProbableRule),
-%     getUnconfirmedPremise(MostProbableRule, PremiseNumber),
-%     premise(MostProbableRule, PremiseNumber, PremiseContent),
-%     (   Answer = yes ->
-%         writeln('Finding true premises'),
-%         processEvidence(PremiseContent)
-
-%     ;   Answer = no -> 
-%         writeln('Retracting false rules'),
-%         findAndDeleteFalseRules(PremiseContent)
-
-%     ;   writeln('Type only yes/no')
-%     ).
 
 answer(yes):-
     getProbabilities(List),
     getMostProbableRule(List, MostProbableRule),
     getUnconfirmedPremise(MostProbableRule, PremiseNumber),
     premise(MostProbableRule, PremiseNumber, PremiseContent),
+
+    (conclusion(Rule, PremiseContent) ->
+        write('Preguntando por sub-regla, num: '), writeln(Rule),
+        getUnconfirmedPremise(Rule, Number),
+        writeln(PremiseNumber),
+        premise(Rule, Number, Content),
+
+        %%% TODO TODO TODO Agregar recursividad para revisar si esta premisa no es a su vez otra sub-regla
+
+        writeln('Finding true premises'),
+        processEvidence(Content)
+    ;
+        writeln('Finding true premises'),
+        processEvidence(PremiseContent)
+    ).
     
-    writeln('Finding true premises'),
-    processEvidence(PremiseContent).
+    
 
 answer(no):-
     getProbabilities(List),
     getMostProbableRule(List, MostProbableRule),
     getUnconfirmedPremise(MostProbableRule, PremiseNumber),
     premise(MostProbableRule, PremiseNumber, PremiseContent),
+
+    % TODO: Al contestar no, además de eliminar las reglas que la tengan como premisa, 
+    % checar si corresponde a una sub-regla, si es así, entonces también eliminar las 
+    % reglas que la incluyan como parte de sus premisas
+    
+    % TAMBIEN RECURSIVO
     
     writeln('Retracting false rules'),
     findAndDeleteFalseRules(PremiseContent).
