@@ -161,15 +161,32 @@ setAllRulePremisesToTrue(Rule):- % Sets to true all premises
     % assert(status(Rule, Premise, true)),
     % false.
 
+    
 
 findAndDeleteFalseRules(Evidence):- % DOUBT: que tan bueno es borrar las reglas falsas
-    premise(Rule, Premise, Evidence),
-    retract(premise(Rule, _, _)),
-    retract(rule(Rule)),
-    retract(conclusion(Rule, _)),
-    retract(status(Rule, Premise, _)),
-    false.
+    findall(RuleFound, premise(RuleFound, _, Evidence), Rules),
+    deleteTheseRules(Rules).
 
+deleteTheseRules([Rule | LeftRules]):-
+    conclusion(Rule, Conclusion),
+
+    retractall(premise(Rule, _, _)),
+    retractall(rule(Rule)),
+    retractall(conclusion(Rule, _)),
+    retractall(status(Rule, _, _)),
+
+    %detect if the conclusion of this premise is a premise of an outer rule/conclusion
+    (premise(_, _, Conclusion) ->
+        write('This conclusion is a premise also: '), writeln(Conclusion),
+        %volver a buscar
+        findAndDeleteFalseRules(Conclusion)
+    ;
+        write('Delete done')
+    ),
+
+    deleteTheseRules(LeftRules).
+
+deleteTheseRules([]).
 
 getAllRules(Rules):-
     findall(Rule, rule(Rule), Rules).
@@ -183,6 +200,7 @@ getPremisesLength(Rule, Size):-
 
 getTruePremisesLength(Rule, Size):-
     findall(Rule, status(Rule, _, true), List),
+        % TODO: check if premise is a conclusion
     length(List, Size).
 
 getProbability(Rule, Percentage) :-
@@ -216,25 +234,27 @@ ask:-
     getProbabilities(List),
     getMostProbableRule(List, MostProbableRule),
     getUnconfirmedPremise(MostProbableRule, PremiseNumber),
-    premise(MostProbableRule, PremiseNumber, [PremiseContent]),
+    premise(MostProbableRule, PremiseNumber, PremiseContent),
     
-    % isThisPremiseAConclusion(PremiseContent)
-    (conclusion(Rule, [PremiseContent]) -> % DOUBT: is there any other way to do this??
+    getInnerUnconfirmedPremise(PremiseContent, InnerPremise),
+
+    write('El paciente tiene '),
+    write(InnerPremise),
+    writeln('?').
+
+
+getInnerUnconfirmedPremise(OuterPremise, InnerPremise):-
+    (conclusion(Rule, OuterPremise) ->
+        write('This premise is a conclusion also: '), writeln(OuterPremise),
         getUnconfirmedPremise(Rule, Number),
-        premise(Rule, Number, [Content]),
+        premise(Rule, Number, Content),
 
-        %%% TODO TODO TODO Agregar recursividad para revisar si esta premisa no es a su vez otra sub-regla
-
-        write('El paciente tiene '),
-        write(Content),
-        writeln('?')
+        getInnerUnconfirmedPremise(Content, InnerPremise)
     ;
-
-        write('El paciente tiene '),
-        write(PremiseContent),
-        writeln('?')
+        write('Inner premise found: '), writeln(OuterPremise),
+        premise(RuleNumber, PremiseNumber, OuterPremise),
+        premise(RuleNumber, PremiseNumber, InnerPremise)
     ).
-
 
 answer(yes):-
     getProbabilities(List),
@@ -242,20 +262,9 @@ answer(yes):-
     getUnconfirmedPremise(MostProbableRule, PremiseNumber),
     premise(MostProbableRule, PremiseNumber, PremiseContent),
 
-    (conclusion(Rule, PremiseContent) ->
-        write('Preguntando por sub-regla, num: '), writeln(Rule),
-        getUnconfirmedPremise(Rule, Number),
-        writeln(PremiseNumber),
-        premise(Rule, Number, Content),
 
-        %%% TODO TODO TODO Agregar recursividad para revisar si esta premisa no es a su vez otra sub-regla
-
-        writeln('Finding true premises'),
-        processEvidence(Content)
-    ;
-        writeln('Finding true premises'),
-        processEvidence(PremiseContent)
-    ).
+    getInnerUnconfirmedPremise(PremiseContent, InnerPremise),
+    processEvidence(InnerPremise).
     
     
 
@@ -264,15 +273,11 @@ answer(no):-
     getMostProbableRule(List, MostProbableRule),
     getUnconfirmedPremise(MostProbableRule, PremiseNumber),
     premise(MostProbableRule, PremiseNumber, PremiseContent),
-
-    % TODO: Al contestar no, además de eliminar las reglas que la tengan como premisa, 
-    % checar si corresponde a una sub-regla, si es así, entonces también eliminar las 
-    % reglas que la incluyan como parte de sus premisas
-    
-    % TAMBIEN RECURSIVO
     
     writeln('Retracting false rules'),
-    findAndDeleteFalseRules(PremiseContent).
+
+    getInnerUnconfirmedPremise(PremiseContent, InnerPremise),
+    findAndDeleteFalseRules(InnerPremise).
 
 
 showProbabilities:-
