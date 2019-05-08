@@ -27,6 +27,7 @@ premise(10, 1,  [agitacion]).
 premise(10, 2,  [preocupacion]).
 conclusion(10,  [ansiedad]).
 
+% DOUBT: si no tiene agitacion entonces no tiene ansiedad y si no tiene ansiedad entonces no tiene preocupacion???
 
 % arritmia 
 rule(2).

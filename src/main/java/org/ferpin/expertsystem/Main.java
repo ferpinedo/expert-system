@@ -24,8 +24,8 @@ public class Main extends Application {
   }
 
   public void start(Stage primaryStage) throws Exception {
-    System.out.println( "Consult: " + (PrologPuppeteer.consult("F:\\Repos\\expert-system\\src\\main\\resources\\org\\ferpin\\expertsystem\\algorithm\\expert-system.pl") ? "True" : "False"));
-    System.out.println("Read lines: " + PrologPuppeteer.run("loadRules", "F:\\Repos\\expert-system\\src\\main\\resources\\org\\ferpin\\expertsystem\\knowledge\\rulesEnfermedadesUno.txt"));
+//    System.out.println( "Consult: " + (PrologPuppeteer.consult("F:\\Repos\\expert-system\\src\\main\\resources\\org\\ferpin\\expertsystem\\algorithm\\expert-system.pl") ? "True" : "False"));
+//    System.out.println("Read lines: " + PrologPuppeteer.run("loadRules", "F:\\Repos\\expert-system\\src\\main\\resources\\org\\ferpin\\expertsystem\\knowledge\\rulesEnfermedadesUno.txt"));
 
 
     primaryStage.setTitle("Sistema Experto");

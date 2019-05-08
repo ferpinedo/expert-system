@@ -4,7 +4,12 @@
 :- dynamic premise/3.
 :- dynamic conclusion/2.
 :- dynamic status/3. % premises 
-:- dynamic finalConclusion/1. 
+:- dynamic finalConclusion/1. % to distinguish sub-rules from rules
+
+% DOUBT: si no tiene agitacion entonces no tiene ansiedad y si no tiene ansiedad entonces no tiene preocupacion???
+
+:- dynamic premiseProbability/3.
+:- dynamic premisesProbabilitiesSum/2.
 
 %%%%    Read utilities  %%%%
 loadRules(FilePath):-
@@ -29,6 +34,8 @@ initializeRuleStatus([]).
 
 initializeRuleStatus([FirstRule|Left]):-
     findall(Premise, premise(FirstRule, Premise, _), Premises),
+    % initialize sum of premises probabilities
+    assert(premisesProbabilitiesSum(FirstRule, 0)),
     initializePremiseStatus(FirstRule, Premises),
     initializeRuleStatus(Left).
 
@@ -36,6 +43,8 @@ initializePremiseStatus(_, []).
 
 initializePremiseStatus(Rule, [FirstPremise|Left]):-
     assert(status(Rule, FirstPremise, empty)),
+    % initialize premise probability
+    assert(premiseProbability(Rule, FirstPremise, 0)),
     initializePremiseStatus(Rule, Left).
 
 clean:-
@@ -198,16 +207,97 @@ getPremisesLength(Rule, Size):-
     findall(Rule, premise(Rule, _, _), List),
     length(List, Size).
 
+%%% Funcional!
+
 getTruePremisesLength(Rule, Size):-
-    findall(Rule, status(Rule, _, true), List),
-        % TODO: check if premise is a conclusion
+    findall(Premise, status(Rule, Premise, true), List),
+    % TODO: check if premise is a conclusion
     length(List, Size).
+
+
+%%% No funcional: Intento con recursividad
+% Probar con predicado DINAMICO 
+
+% getTruePremisesLength(Rule, Size):-
+%     findall(Premise, status(Rule, Premise, _), List),
+%     evaluatePremises(Rule, List, 0, Size).
+
+%         % TODO: check if premise is a conclusion
+%     % length(List, Size).
+
+% evaluatePremises(OuterRule, [FirstPremise | PremisesLeft], InitialValue, TruePremises):-
+%     premise(OuterRule, FirstPremise, PremiseContent),
+
+%     (conclusion(InnerRule, PremiseContent)->
+%         getProbability(InnerRule, Percentage),
+%         Temporal is InitialValue + Percentage,
+%         evaluatePremises(OuterRule, PremisesLeft, Temporal, Temporal)
+%     ;
+%         (status(OuterRule, FirstPremise, true) ->
+%             Temporal is InitialValue + 1,
+%             evaluatePremises(OuterRule, PremisesLeft, Temporal, Temporal)
+%         ;
+%             evaluatePremises(OuterRule, PremisesLeft, InitialValue, InitialValue)
+%         )
+%     ).
+
+% evaluatePremises(_, [], _).
+
 
 getProbability(Rule, Percentage) :-
     rule(Rule),
     getTruePremisesLength(Rule, TrueSize),
     getPremisesLength(Rule, FullSize),
     Percentage is TrueSize / FullSize.
+
+%%% Intento 3
+getRuleProbability(Rule, Probability):-
+    
+    write('Getting probability of rule '), writeln(Rule),
+    findall(Premise, premise(Rule, Premise, _), Premises),
+    forall(member(Member, Premises), getPremiseProbability(Rule, Member)),
+    
+    sumPremisesProbabilities(Rule),
+    premisesProbabilitiesSum(Rule, ProbabilitiesSum),
+
+    length(Premises, Size),
+    write('The sum of premises probabilities is '), writeln(ProbabilitiesSum),
+    write('The size is '), writeln(Size),
+    Probability is ProbabilitiesSum / Size.
+
+getPremiseProbability(Rule, Premise):-
+    write('Getting probability of premise '), write(Rule), write(', '), writeln(Premise),
+    (status(Rule, Premise, true) ->
+        retract(premiseProbability(Rule, Premise, _)),
+        assert(premiseProbability(Rule, Premise, 1))
+    ;
+        premise(Rule, Premise, PremiseContent),
+        (conclusion(InnerRule, PremiseContent) ->
+            getRuleProbability(InnerRule, InnerRuleProbability),
+
+            retract(premiseProbability(Rule, Premise, _)),
+            assert(premiseProbability(Rule, Premise, InnerRuleProbability))
+        ;
+            true
+        )
+    ).
+
+sumPremisesProbabilities(Rule):-
+    write('Summing premises'),
+    premiseProbability(Rule, Premise, PremiseProbability),
+    premisesProbabilitiesSum(Rule, Sum),
+    Temporal is Sum + PremiseProbability,
+    retract(premiseProbability(Rule, Premise, _)),
+    retract(premisesProbabilitiesSum(Rule, _)),
+    assert(premisesProbabilitiesSum(Rule, Temporal)),
+    write('The sum of premises probabilities till the moment is '), writeln(Temporal).
+
+
+
+
+
+
+
 
 getProbabilities(List):-
     findall([Percentage, Rule], getProbability(Rule, Percentage), List).
