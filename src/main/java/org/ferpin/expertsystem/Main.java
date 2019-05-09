@@ -2,9 +2,12 @@ package org.ferpin.expertsystem;
 
 
 import java.io.FileInputStream;
+import java.net.URL;
 import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -24,38 +27,17 @@ public class Main extends Application {
   }
 
   public void start(Stage primaryStage) throws Exception {
-//    System.out.println( "Consult: " + (PrologPuppeteer.consult("F:\\Repos\\expert-system\\src\\main\\resources\\org\\ferpin\\expertsystem\\algorithm\\expert-system.pl") ? "True" : "False"));
-//    System.out.println("Read lines: " + PrologPuppeteer.run("loadRules", "F:\\Repos\\expert-system\\src\\main\\resources\\org\\ferpin\\expertsystem\\knowledge\\rulesEnfermedadesUno.txt"));
-
+    PrologPuppeteer.simpleQuery("clean");
+    System.out.println( "Consult: " + (PrologPuppeteer.consult("F:\\Repos\\expert-system\\src\\main\\resources\\org\\ferpin\\expertsystem\\algorithm\\expert-system.pl") ? "True" : "False"));
+    System.out.println("Read lines: " + PrologPuppeteer.run("loadRules", "F:\\Repos\\expert-system\\src\\main\\resources\\org\\ferpin\\expertsystem\\knowledge\\rulesEnfermedadesUno.txt"));
+    PrologPuppeteer.run("initRules");
 
     primaryStage.setTitle("Sistema Experto");
+    URL url = Main.class.getResource("view/MainView.fxml");
+    FXMLLoader fxmlLoader = new FXMLLoader(url);
+    Parent parent = fxmlLoader.load();
 
-    VBox vBox = new VBox();
-    Scene scene = new Scene(vBox);
-
-    vBox.setAlignment(Pos.CENTER);
-    vBox.setSpacing(10);
-    vBox.setPadding(new Insets(10));
-
-//    FileInputStream fileInputStream = new FileInputStream("resources/images/man.png");
-//    Image image = new Image(fileInputStream);
-//    ImageView imageView = new ImageView(image);
-//    vBox.getChildren().add(imageView);
-
-    Label label = new Label("¿Qué me quieres decir?");
-    vBox.getChildren().add(label);
-
-    TextField textField = new TextField();
-    vBox.getChildren().add(textField);
-
-    Button button = new Button("Enviar");
-    vBox.getChildren().add(button);
-
-    button.setOnAction(event -> {
-      System.out.println(textField.getText());
-//      textField.setText("");
-//      label.setText("Gracias por tu participacion");
-    });
+    Scene scene = new Scene(parent);
 
     primaryStage.setScene(scene);
     primaryStage.show();
